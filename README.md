@@ -16,6 +16,7 @@ changesets [941b79f83d6c](https://bitbucket.org/rajbot/warc-tools/changeset/941b
 - The WARC-Payload-Digest is fabricated if not present. This allows us to
 include the sha1 hash in cdx files without having to store the entire
 payload in memory. Changeset [0bedbca70d7c](https://bitbucket.org/rajbot/warc-tools/changeset/0bedbca70d7c)
+and [73242eb3913d](https://bitbucket.org/rajbot/warc-tools/commits/73242eb3913d8bb2ad72a080de0ecf95c18c6a83)
 - Do not store payloads larger than 5MB due to memory issues:
 changesets [f412b98c5575](https://bitbucket.org/rajbot/warc-tools/changeset/f412b98c5575),
 [d3767f736601](https://bitbucket.org/rajbot/warc-tools/changeset/d3767f736601), and
