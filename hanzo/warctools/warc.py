@@ -239,7 +239,7 @@ class WarcParser(ArchiveParser):
             ### We do this because we don't want to read large records into memory,
             ### since this was exhasting memory and crashing for large payloads.
             sha1_digest = None
-            if 'response' == record.type and 'application/http; msgtype=response' == content_type:
+            if 'response' == record.type and re.match('^application/http;\s*msgtype=response$', content_type):
                 parsed_http_header = False
                 digest = record.get_header(WarcRecord.PAYLOAD_DIGEST)
                 if digest is None:
