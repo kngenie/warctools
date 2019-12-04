@@ -1,7 +1,9 @@
 """Read records from normal file and compressed file"""
 
+import sys
 import gzip
 import re
+import io
 
 from hanzo.warctools.archive_detect import is_gzip_file, guess_record_type
 
@@ -202,6 +204,54 @@ class GeeZipFile(gzip.GzipFile):
                 self.member_offset = self.fileobj.tell()
 
         return gzip.GzipFile._read(self, size)
+
+if sys.version_info >= (3, 5):
+    class _GeeZipReader(gzip._GzipReader):
+        def _read_gzip_header(self):
+            pos = self._raw_pos()
+            has_record = super(_GeeZipReader, self)._read_gzip_header()
+            if has_record:
+                self.member_offset = pos
+            return has_record
+
+        def _raw_pos(self):
+            """Return offset in raw gzip file corresponding to this object's
+            state.
+            """
+            # _fp is PaddedFile object with prepend method. it doesn't have
+            # tell(). It has seek(), but it's useless as a replacement for
+            # tell(). We need to compute offset from internal attributes.
+            pos = self._fp.file.tell()
+            if self._fp._read is not None:
+                pos -= (self._fp._length - self._fp._read)
+            return pos
+
+    class GeeZipFile(gzip.GzipFile):
+        def __init__(self, filename=None, mode=None, fileobj=None):
+            if mode is None:
+                mode = getattr(fileobj, 'mode', 'rb')
+            if mode.startswith('r'):
+                if mode and 'b' not in mode:
+                    mode += 'b'
+                if fileobj is None:
+                    fileobj = self.myfileobj = builtins.open(
+                        filename, mode or 'rb')
+                if filename is None:
+                    filename = getattr(fileobj, 'name', '')
+                    if not isinstance(filename, (str, bytes)):
+                        filename = ''
+                self.mode = gzip.READ
+                raw = _GeeZipReader(fileobj)
+                self._buffer = io.BufferedReader(raw)
+                self.name = filename
+                self.fileobj = fileobj
+                self._raw = raw
+            else:
+                super(GeeZipFile, self).__init__(filename, mode, fileobj)
+
+        @property
+        def member_offset(self):
+            return self._raw.member_offset
 
 class GzipRecordStream(RecordStream):
     """A stream to read/write concatted file made up of gzipped
